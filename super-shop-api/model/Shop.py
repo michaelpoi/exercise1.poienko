@@ -3,8 +3,14 @@ class Shop:
         self.customers = []
         self.products = []
 
-    def addProduct(self, p):
-        self.products.append(p)
+    def changeCustomer(self, id, address, name, dob):
+        for c in self.customers:
+            if c.customer_id == id:
+                c.address = address
+                c.name = name
+                c.dob = dob
+                return True
+        return False
 
     def addCustomer(self, c):
         c1 = self.getCustomerbyEmail(c.email)
@@ -26,3 +32,21 @@ class Shop:
         for c in self.customers:
             if c.email == email:
                 return c
+
+    # Product section
+    def getProduct(self, prod_id):
+        for p in self.products:
+            if p.product_id == prod_id:
+                return p
+
+    def getProductbySerial(self, sn):
+        for p in self.products:
+            if p.serial_number == sn:
+                return p
+
+    def addProduct(self, p):
+        prod = self.getProductbySerial(p.serial_number)
+        if prod is None:
+            self.products.append(p)
+            return True
+        return False

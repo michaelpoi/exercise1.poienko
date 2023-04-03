@@ -57,9 +57,12 @@ class SpecificCustomerOps(Resource):
                 'name': 'Customers name',
                 'email': 'Customer Email',
                 'dob': 'Customer birthday'})
-    def put(self, customer_id):
-        pass
-
+    def put(self, customer_id):     #upd   (seems like it works properly)
+        args = request.args
+        if my_shop.changeCustomer(customer_id, args['address'], args['name'], args['dob']):
+            return jsonify("Data has been changed", args)
+        else:
+            return jsonify("Customer has not been found")
 
 @CustomerAPI.route('/verify')
 class CustomerVerficiation(Resource):
@@ -85,11 +88,30 @@ class CustomerPWReset(Resource):
     @CustomerAPI.doc(
         description="Generate a temporary password and send via email.", )
     def post(self, customer_id):
-        pass
+        c = my_shop.getCustomer(customer_id)
+        if c is not None:
+            c.generatetmppas()
+            return jsonify(f"On email {c.email} was sent a temporary password: {c.tmppass}")
+        else:
+            return jsonify("Customer was not found")
 
     @CustomerAPI.doc(
         description="Allow password reset based on the temporary password",
         params={'temp_pw': 'Password sent by email',
                 'new_pw': 'New password'})
     def put(self, customer_id):
-        pass
+        c = my_shop.getCustomer(customer_id)
+        if c is None:
+            return jsonify("Customer was not found")
+        if c.tmppass is None:
+            return jsonify("Temporary password was not created before")
+        temp = request.args['temp_pw']
+        new_pw = request.args['new_pw']
+        if c.reset_password(temp,new_pw):
+            return jsonify(f"Customer`s {customer_id} password was changed")
+        else:
+            return jsonify("Temporary password is incorrect")
+
+
+
+
