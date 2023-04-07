@@ -57,12 +57,13 @@ class SpecificCustomerOps(Resource):
                 'name': 'Customers name',
                 'email': 'Customer Email',
                 'dob': 'Customer birthday'})
-    def put(self, customer_id):     #upd   (seems like it works properly)
+    def put(self, customer_id):  # upd   (seems like it works properly)
         args = request.args
         if my_shop.changeCustomer(customer_id, args['address'], args['name'], args['dob']):
             return jsonify("Data has been changed", args)
         else:
             return jsonify("Customer has not been found")
+
 
 @CustomerAPI.route('/verify')
 class CustomerVerficiation(Resource):
@@ -107,11 +108,81 @@ class CustomerPWReset(Resource):
             return jsonify("Temporary password was not created before")
         temp = request.args['temp_pw']
         new_pw = request.args['new_pw']
-        if c.reset_password(temp,new_pw):
+        if c.reset_password(temp, new_pw):
             return jsonify(f"Customer`s {customer_id} password was changed")
         else:
             return jsonify("Temporary password is incorrect")
 
 
+@CustomerAPI.route('/<customer_id>/add2cart')
+class Add2Cart(Resource):
+    @CustomerAPI.doc(description="Add an item to a shopping cart",
+                     params={'product-id': 'ID of added product', 'quantity': 'Number of units added'})
+    def put(self, customer_id):
+        p = my_shop.getProduct(request.args['product-id'])
+        c = my_shop.getCustomer(customer_id)
+        q = int(request.args['quantity'])
+        if not p or not c:
+            return jsonify('Product {prod-id} or Customer {cust-id} was not found')
+        if q == -1:
+            if c.removeFromCart(p):
+                return jsonify("Product {prod_id} was removed from a cart")
+            return jsonify("Product {prod-id} is not in cart")
+        if c.add2cart(p, q):
+            return jsonify("Product {prod-id} was added to a cart")
+        return jsonify("Product {prod_id} can not be added to a cart")
 
 
+@CustomerAPI.route('/<customer_id>/order')
+class CreateOrder(Resource):
+    @CustomerAPI.doc(description="Confirm an order",
+                     params={'shipping_address': 'Shipping address',
+                             'cardNr': 'Credit card number'})
+    def post(self, customer_id):
+        c = my_shop.getCustomer(customer_id)
+        address = request.args['shipping_address']
+        cardNr = request.args['cardNr']
+        if not c:
+            return jsonify(f"Customer {customer_id} was not found")
+        if Customer.verifyPaymentData(cardNr):
+            if c.createOrder(address):
+                return jsonify("Order is confirmed")
+            return jsonify("Cart is empty")
+        return jsonify("Card number is invalid")
+
+
+@CustomerAPI.route('/<customer_id>/orders')
+class GetOrders(Resource):
+    @CustomerAPI.doc(description="Return customers orders")
+    def get(self, customer_id):
+        c = my_shop.getCustomer(customer_id)
+        if c:
+            return jsonify(c.orders)
+        return jsonify(f"Customer {customer_id} was not found")
+
+@CustomerAPI.route('/<customer_id>/returnable')
+class ReturnableOrders(Resource):
+    @CustomerAPI.doc(description = "List of returnable products")
+    def get(self,customer_id):
+        c = my_shop.getCustomer(customer_id)
+        if not c:
+            return jsonify(f"Customer {customer_id} was not found")
+        return jsonify(c.Returnable())
+
+@CustomerAPI.route('/<customer_id>/points')
+class EarnedPoints(Resource):
+    @CustomerAPI.doc(description="Get customers bonus points")
+    def get(self, customer_id):
+        c = my_shop.getCustomer(customer_id)
+        if c:
+            return jsonify(f"Customer {customer_id} has {c.bonus_points} bonus points so far.")
+        return jsonify(f"Customer {customer_id} was not found")
+
+    @CustomerAPI.doc(description = "Add bonus points", params = {'bonus_points' : 'Number of added bonus points'})
+    def put(self, customer_id):
+        n = int(request.args['bonus_points'])
+        c = my_shop.getCustomer(customer_id)
+        if c:
+            c.bonus_points += n
+            return jsonify("Bonus points were added")
+        return jsonify(f"Customer {customer_id} was not found")

@@ -2,6 +2,7 @@ class Shop:
     def __init__(self):
         self.customers = []
         self.products = []
+        self.coupons = []
 
     def changeCustomer(self, id, address, name, dob):
         for c in self.customers:
@@ -38,15 +39,26 @@ class Shop:
         for p in self.products:
             if p.product_id == prod_id:
                 return p
-
-    def getProductbySerial(self, sn):
-        for p in self.products:
-            if p.serial_number == sn:
-                return p
+        return False
 
     def addProduct(self, p):
-        prod = self.getProductbySerial(p.serial_number)
-        if prod is None:
-            self.products.append(p)
-            return True
-        return False
+        self.products.append(p)
+
+    def removeProduct(self, p):
+        self.products.remove(p)
+
+    def addCoupon(self, d):
+        self.coupons.append(d)
+
+    def getValidCoupons(self):
+        return [d for d in self.coupons if d.isValid()]
+
+    def getCouponsByCategory(self, category):
+        res = []
+        for d in self.coupons:
+            if d.category == category:
+                res.append(d)
+        if len(res) == 0:
+            return False
+        else:
+            return res
