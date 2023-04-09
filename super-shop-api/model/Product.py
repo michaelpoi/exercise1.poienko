@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import uuid
 import random
 import string
@@ -16,6 +17,9 @@ class Product:
             sn += i
         self.serial_number = sn
         self.removed_units = {}
+        self.coupons = []
+        self.discount = 0
+        self.saled_units = []
 
     def changeStock(self, q,modify = True):
         if self.quantity + q < 0:
@@ -27,9 +31,16 @@ class Product:
     def sellProduct(self, c, q):
         if self.changeStock(-q):
             c.purchase_history.append(self)
+            self.saled_units.append((datetime.today(), q))
             return True
         return False
 
+    def CalculateT(self):
+        t = 0
+        for item in self.saled_units:
+            if item[0] >= datetime.today() - timedelta(days=7):
+                t += item[1]
+        return t
     def removeItems(self, r, q):
         if self.changeStock(-q):
             if self.removed_units.get(r) is None:
@@ -38,3 +49,16 @@ class Product:
                 self.removed_units[r] += q
             return True
         return False
+
+    def ValidateCoupons(self):
+        coupons = list.copy(self.coupons)
+        for d in coupons:
+            if not d.isValid():
+                self.coupons.remove(d)
+
+    def CalculateDiscount(self):
+        self.ValidateCoupons()
+        total = 0
+        for d in self.coupons:
+            total += d.value
+        self.discount = total

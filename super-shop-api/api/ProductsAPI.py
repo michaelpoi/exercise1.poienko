@@ -24,8 +24,10 @@ class AddProductA(Resource):
         price = args['price']
         new_product = Product(name, expiry, category, price)
         # add the product
-        my_shop.addProduct(new_product)
-        return jsonify(new_product)
+        if my_shop.addProduct(new_product):
+            return jsonify(new_product)
+        else:
+            return jsonify("Product already exists")
 
     @ProductAPI.doc(description="Get list of all products")
     def get(self):
@@ -100,4 +102,6 @@ class RemoveProduct(Resource):
 
 @ProductAPI.route('/reorder')
 class ProductReorder(Resource):
-    pass
+    @ProductAPI.doc("List of products that must be reordered")
+    def get(self):
+        return jsonify(my_shop.getReorder())

@@ -1,8 +1,10 @@
 # the instance of shop, where all data is stored.
+from datetime import datetime
+
 from model.Customer import Customer
 from model.Shop import Shop
 from model.Product import Product
-
+from model.Coupon import Coupon
 my_shop = Shop()
 
 # Test data
@@ -18,4 +20,8 @@ p2.changeStock(10)
 c1.add2cart(p1,20)
 c1.add2cart(p2,1)
 c1.createOrder("Wolf street, 5b")
+date_format = '%d.%m.%Y'
+d1 = Coupon("electronics", 15,datetime.strptime("07.04.2023", date_format), datetime.strptime("10.04.2023", date_format))
 my_shop.addProduct(p1)
+my_shop.addProduct(p2)
+my_shop.addCoupon(d1)

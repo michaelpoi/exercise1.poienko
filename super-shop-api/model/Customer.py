@@ -1,7 +1,9 @@
+import random
 import uuid
 import secrets
 import string
 from model.Order import Order
+
 
 class Customer:
     def __init__(self, name, email, address, dob):
@@ -76,7 +78,10 @@ class Customer:
         val = [item for item in self.cart]
         o = Order(val, address)
         for p in self.cart:
-            p[0].sellProduct(self, p[1])
+            if not p[0].changeStock(-p[1], modify=False):
+                return False
+        for p in self.cart:
+            p[0].sellProduct(self,p[1])
         self.orders.append(o)
         self.cart.clear()
         price = o.price
@@ -85,4 +90,9 @@ class Customer:
 
     def Returnable(self):
         return [item for item in self.orders if item.isReturnable()]
+
+
+
+
+
 

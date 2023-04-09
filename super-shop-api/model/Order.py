@@ -13,7 +13,8 @@ class Order:
     def calculateTotalPrice(self):
         suma = 0
         for o in self.value:
-            suma += o[0].price * o[1]
+            o[0].CalculateDiscount()
+            suma += o[0].price * (1-o[0].discount) * o[1]
         return suma
 
     def isReturnable(self):

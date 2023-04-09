@@ -58,11 +58,19 @@ class SpecificCustomerOps(Resource):
                 'email': 'Customer Email',
                 'dob': 'Customer birthday'})
     def put(self, customer_id):  # upd   (seems like it works properly)
-        args = request.args
-        if my_shop.changeCustomer(customer_id, args['address'], args['name'], args['dob']):
-            return jsonify("Data has been changed", args)
-        else:
-            return jsonify("Customer has not been found")
+        try:
+            name = request.args['name']
+        except:
+            name = None
+        try: address = request.args['address']
+        except: address = None
+        try: dob = request.args['dob']
+        except: dob = None
+        c = my_shop.getCustomer(customer_id)
+        if not c:
+            return jsonify("Customer was not found")
+        my_shop.changeCustomer(c, address,name,dob)
+        return jsonify("Customer info was updated")
 
 
 @CustomerAPI.route('/verify')
@@ -147,7 +155,7 @@ class CreateOrder(Resource):
         if Customer.verifyPaymentData(cardNr):
             if c.createOrder(address):
                 return jsonify("Order is confirmed")
-            return jsonify("Cart is empty")
+            return jsonify("Cart is empty or we dont have enough units of product")
         return jsonify("Card number is invalid")
 
 
@@ -159,6 +167,18 @@ class GetOrders(Resource):
         if c:
             return jsonify(c.orders)
         return jsonify(f"Customer {customer_id} was not found")
+
+
+@CustomerAPI.route('/<customer_id>/recommendations')
+class GetRecommendations(Resource):
+    @CustomerAPI.doc(description = "Get a list of 10 recommendations")
+    def get(self, customer_id):
+        c = my_shop.getCustomer(customer_id)
+        if not c:
+            return jsonify("Customer was not found")
+        if len(c.purchase_hisory) == 0:
+            return jsonify("Customers purchase history is empty")
+        return jsonify(my_shop.getRecommendations(c))
 
 @CustomerAPI.route('/<customer_id>/returnable')
 class ReturnableOrders(Resource):
@@ -183,6 +203,8 @@ class EarnedPoints(Resource):
         n = int(request.args['bonus_points'])
         c = my_shop.getCustomer(customer_id)
         if c:
-            c.bonus_points += n
-            return jsonify("Bonus points were added")
+            if n>0:
+                c.bonus_points += n
+                return jsonify("Bonus points were added")
+            return jsonify("You can add positive number only")
         return jsonify(f"Customer {customer_id} was not found")
